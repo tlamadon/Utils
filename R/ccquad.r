@@ -3,7 +3,7 @@
 # The function is computed at the Chebyshev-Gauss-Lobatto points
 # which are not the roots but the extrema of the polynomial.
 #
-# see http://mathdl.maa.org/images/upload_library/4/vol6/Sarra/Chebyshev.html
+# see <http://mathdl.maa.org/images/upload_library/4/vol6/Sarra/Chebyshev.html>
 #
 # to get the nodes and weights for CC intregration use cc.quad
 # Q = cc.quad(n)
@@ -29,6 +29,7 @@
 #
 # the first function is adapted from the Matlab code from 
 # Copyright (c) 2009, Greg von Winckel
+# <http://www.mathworks.com/matlabcentral/fileexchange/authors/11897>
 
 cc.quad <- function(N1,a=-1,b=1) {
   N=N1-1; 
