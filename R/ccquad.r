@@ -3,6 +3,8 @@
 # The function is computed at the Chebyshev-Gauss-Lobatto points
 # which are not the roots but the extrema of the polynomial.
 #
+# see http://mathdl.maa.org/images/upload_library/4/vol6/Sarra/Chebyshev.html
+#
 # to get the nodes and weights for CC intregration use cc.quad
 # Q = cc.quad(n)
 # Q$nodes are the nodes and Q$weights are the weights
