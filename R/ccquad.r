@@ -11,7 +11,8 @@
 #
 # given the value of a function f at the nodes of Q, you can easily
 # compute the integral by doing:
-# f_i * w_i
+# Q$weights %*% f
+# ( note that %*% is just the matrix multiplication in R )
 #
 # the second thing you might want to do is interpolate f. To
 # do so, you can precompute an evaluation matrix by calling
@@ -23,9 +24,6 @@
 # points just run 
 # y = E %*% f
 # this will give you your interpolation
-#
-# n must be odd
-# computes Clenshaw Curtis quadrature nodes
 #
 # the first function is adapted from the Matlab code from 
 # Copyright (c) 2009, Greg von Winckel
