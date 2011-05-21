@@ -42,7 +42,7 @@ cc.quad <- function(N1,a=-1,b=1) {
   w=bma*(c(f1[1], 2*f1[2:N], f1[N1]))/2;
   x=0.5*((b+a)+N*bma*f2[1:N1]);
 
-  return(list(weights=w,nodes=x))
+  return(list(weights=w,nodes=x,a=a,b=b))
 }
 
 
@@ -66,13 +66,15 @@ cc.interp <- function(vs,Q) {
   P = chebyshev.t.polynomials(N)
   
   # evaluate them on the original grid
-  E = polynomial.values(P, Q$nodes)
+  nodes = 2*(Q$nodes -Q$a)/(Q$a-Q$b) -1
+  E = polynomial.values(P, nodes)
   E = 2/N*t(array(unlist(E),dim=c(n,n)))
   E[,1]=E[,1]/2
   E[,n]=E[,n]/2
 
   # evaluate them on the original grid
-  E2 = polynomial.values(P, vs)
+  nodes = 2*(vs-Q$a)/(Q$a-Q$b) -1
+  E2 = polynomial.values(P, nodes)
   E2 = array(unlist(E2),dim=c(r,n))
   E2[,1] = E2[,1]/2
   
@@ -84,8 +86,8 @@ cc.interp <- function(vs,Q) {
 cc.interp.test <-function() {
   
   n=5
-  vs = seq(-1,1,l=15)
-  Q = cc.quad(n)
+  vs = seq(0,5,l=15)
+  Q = cc.quad(n,0,8)
   f= exp(Q$nodes)
   E = cc.interp(vs,Q)
 
