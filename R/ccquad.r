@@ -23,10 +23,12 @@
 # points just run 
 # y = E %*% f
 # this will give you your interpolation
-
+#
 # n must be odd
 # computes Clenshaw Curtis quadrature nodes
-
+#
+# the first function is adapted from the Matlab code from 
+# Copyright (c) 2009, Greg von Winckel
 
 cc.quad <- function(N1,a=-1,b=1) {
   N=N1-1; 
