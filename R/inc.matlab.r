@@ -40,6 +40,16 @@ spread <- function(A, loc, dims) {
   return( aperm( array(A,dim=sdim),edim)) 
 }
 
+##tic <- function(reset=FALSE) {
+#  .env <- environment()
+#
+#  if (reset) {
+#    assign('last_tick',  proc.time()[3], envir = .env)
+#    return(0)
+#  } else {
+#    return( proc.time()[3] - get('last_tick',envir = .env))
+#  }
+#}
 
 
 library(rgl)
