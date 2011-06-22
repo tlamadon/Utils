@@ -1,4 +1,7 @@
 function mycsvwrite(filename,var,header)
+% writes a CSV file with headers
+% mycsvwrite(filename,var,header)
+% header is a comma separeted list of names
 
 outid = fopen(filename, 'w+');
 fprintf(outid, '%s\n', header);
