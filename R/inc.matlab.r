@@ -52,6 +52,9 @@ spread <- function(A, loc, dims) {
 #}
 
 
+re = installed.packages()
+
+if ('rgl' %in% names(re[,1])) {
 library(rgl)
 mesh <- function(x=(1:nrow(Z)) / nrow(Z) ,y=(1:nrow(Z)) / nrow(Z),Z) {
 	
@@ -68,4 +71,4 @@ mesh <- function(x=(1:nrow(Z)) / nrow(Z) ,y=(1:nrow(Z)) / nrow(Z),Z) {
 	#rgl.surface(x,y,z)
 }
 
-
+}
