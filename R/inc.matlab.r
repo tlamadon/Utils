@@ -12,6 +12,11 @@ repmat <- function(A,n,m) {
 # spread(A , c(2) , 10) will insert a dimension
 # in the second index of size 10
 spread <- function(A, loc, dims) {
+
+  if (!(is.array(A))) {
+    A = array(A,dim=c(length(A)))
+  }
+
   adims = dim(A)
   
   # check dimensions
