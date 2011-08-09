@@ -1,24 +1,31 @@
-Parse.INI <- function(INI.filename)
+read.ini <- function(filename)
 {
-    connection <- file(INI.filename)
+  connection <- file(filename)
   Lines  <- readLines(connection)
-    close(connection)
+  close(connection)
 
-    Lines <- chartr("[]", "==", Lines)  # change section headers
+  Lines <- chartr("[=", "#=", Lines)  # change section headers
 
-      connection <- textConnection(Lines)
-      d <- read.table(connection, as.is = TRUE, sep = "=", fill = TRUE)
-        close(connection)
+  res = list()
 
-        L <- d$V1 == ""                    # location of section breaks
-          d <- subset(transform(d, V3 = V2[which(L)[cumsum(L)]])[1:3],
-                                                 V1 != "")
+  for (l in Lines) {
+    if (length(grep("\\\\n", l))==0) {
+        ls = strsplit(l, "=")[[1]]
+  	if( length(ls)<2) next;
 
-          ToParse  <- paste("INI.list$", d$V3, "$",  d$V1, " <- '",
-                                                d$V2, "'", sep="")
+	# remove all spaces 
+	value = gsub(" ", "",ls[2])
+	key   = gsub(" ", "",ls[1])
 
-            INI.list <- list()
-            eval(parse(text=ToParse))
+	# check if we have a numeric, and store it as such
+	if (length(grep("[a-zA-Z\\,]", value))==0) {
+	  res[key]=as.numeric(value[1])
+	} else {
+	  res[key]=value
+	}	
+    }
+  }
 
-              return(INI.list)
+
+  return(res)
 }
