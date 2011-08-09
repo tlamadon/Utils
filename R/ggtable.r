@@ -92,7 +92,7 @@ ggtable2 <- function(data , rows, cols, file=NA,view=FALSE,resize=1) {
   HEADER_STR = paste(  HEADER_STR , " \\toprule \r\n");    
 
   for (col in colvals) {
-    HEADER_STR = paste(HEADER_STR , " & \\multicolumn{2}{c}{ ",  col , "}");
+    HEADER_STR = paste(HEADER_STR , " & \\multicolumn{2}{c}{ ",   gsub('_',' ',col) , "}");
   }  
   HEADER_STR = paste(  HEADER_STR , " \\\\ \r\n");    
   #HEADER_STR = paste(  HEADER_STR , " \\cmidrule(r){2-", 2*length(colvals)+1 ,"} \r\n");    
@@ -162,12 +162,12 @@ ggtable2 <- function(data , rows, cols, file=NA,view=FALSE,resize=1) {
 
     # ADD THE GROUP NAME IF IT CHANGED
     if (is.na(PREVROWGRPNAME) | PREVROWGRPNAME != ROWGRPNAME[row,1]) {
-      TABLE_BODY_STR = paste(TABLE_BODY_STR,"\\multicolumn{4}{l}{ \\bf",ROWGRPNAME[row,1],"} \\\\ \r\n")
+      TABLE_BODY_STR = paste(TABLE_BODY_STR,"\\multicolumn{4}{l}{ \\bf", gsub('_',' ',ROWGRPNAME[row,1]),"} \\\\ \r\n")
       PREVROWGRPNAME = ROWGRPNAME[row,1]
     }
     
     # ADD THE ROW NAME
-    TABLE_BODY_STR = paste(TABLE_BODY_STR,"\\emph{\\small ", ROWNAME[row,1],"} & ")
+    TABLE_BODY_STR = paste(TABLE_BODY_STR,"\\emph{\\small ",  gsub('_',' ',ROWNAME[row,1]),"} & ")
 
     # ADD THE VALUE LINE
     TABLE_BODY_STR = paste(TABLE_BODY_STR,  paste(rbind(BODY[row,] , BODYSIG[row,]), collapse=" & "))
