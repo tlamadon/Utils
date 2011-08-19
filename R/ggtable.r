@@ -82,6 +82,9 @@ ggtable2 <- function(data , rows, cols, file=NA,view=FALSE,resize=1) {
   if (!('pval' %in% names(data))) {
     data$pval=NA
   }
+  if (!('sd' %in% names(data))) {
+    data$sd=NA
+  }
   
   # --------------------------------------------------   
   #                 TABLE BODY HEADER
