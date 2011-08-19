@@ -161,7 +161,7 @@ ggtable2 <- function(data , rows, cols, file=NA,view=FALSE,resize=1) {
   for (row in rowvals) {
 
     # ADD THE GROUP NAME IF IT CHANGED
-    if (is.na(PREVROWGRPNAME) | PREVROWGRPNAME != ROWGRPNAME[row,1]) {
+    if ( (length(rows)>1) & (  is.na(PREVROWGRPNAME) | PREVROWGRPNAME != ROWGRPNAME[row,1])) {
       TABLE_BODY_STR = paste(TABLE_BODY_STR,"\\multicolumn{4}{l}{ \\bf", gsub('_',' ',ROWGRPNAME[row,1]),"} \\\\ \r\n")
       PREVROWGRPNAME = ROWGRPNAME[row,1]
     }
