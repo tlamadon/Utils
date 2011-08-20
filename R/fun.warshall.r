@@ -9,11 +9,13 @@ CODE  = '
 	
   int i,j,k;
 
-  for (i=0; i<n; i++) {
-   for (j=0; j<n; j++) {
+  for (j=0; j<n; j++) {
+   for (i=0; i<n; i++) {
     if (M[ i + j*n]>0) {
      for (k=0; k<n; k++) {
-       M[ i + k*n ] = M[ i +j*n ] + M[ j + k*n];
+       if ( M[ j + k*n]>0) {
+         M[ i + k*n ] = 1;
+       } 
      }
     }	    
    }
@@ -30,7 +32,17 @@ warshall.closure <- function(M) {
   return( array(R,dim=D))
 }
 
+warshall.closure.test() {
+  n=4
+  A = (array(0.5 - runif(n*n),dim=c(n,n)) <0)+0
+  B = warshall.closure(A)
 
+  B2 = A
+  for (i in 1:n) {
+    B2 = B2 %*% B2
+  }
+  mean(B2 == B)
+}
 
 
 
