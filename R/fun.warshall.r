@@ -32,7 +32,7 @@ warshall.closure <- function(M) {
   return( array(R,dim=D))
 }
 
-warshall.closure.test() {
+warshall.closure.test <- function() {
   n=4
   A = (array(0.5 - runif(n*n),dim=c(n,n)) <0)+0
   B = warshall.closure(A)
