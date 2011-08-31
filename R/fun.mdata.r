@@ -33,7 +33,21 @@ mappend <- function(d,variable,value) {
   return(d)
 }
 
+mappends <- function(d,variable,values) {
+  non_cst_var = c()
+  for (v in names(d)) {
+    if ( length(unique(d[,v]))>1) non_cst_var = c(non_cst_var,v);
+  }
 
+  new_line = d[1,]
+  new_line[,non_cst_var] = NA
+  new_line$variable[1] = variable
+  new_line[1,names(values)] = values 
+
+  d = rbind(d,new_line)
+
+  return(d)
+}
 
 
 # this first function moves a given var fr
@@ -62,27 +76,18 @@ mmerge <- function(data1,data2,idvar,byvar,vars) {
       I = I & (data2[,v] == d[1,v])
     }
    
-    # find variable that remain constant over d
-    non_cst_var = c()
-    for (v in names(d)) {
-      if ( length(unique(d[,v]))>1) non_cst_var = c(non_cst_var,v);
-    }
-
     # finally we append the value of the I row to the data frame
     for ( v in vars) {
-      new_line = d[1,]
-      new_line[,non_cst_var] = NA
-      new_line$value[1] = data2[I,v]
-      new_line$variable = v 
-      d = rbind(d,new_line)
+      d = mappend(d,v,data2[I,v])
     }
+
     return(d)
   })
 
   return(nd)
 }
 
-# #todo deal with factors as well!
+# rename anything in the table (columns or cells) 
 renameany <-function(d,rules) {
 
   #1) we rename the columns
