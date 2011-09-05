@@ -64,7 +64,7 @@
 #data = read.csv('ex_Data.r',sep=',',)
 
 library(gdata)
-ggtable2 <- function(data , rows, cols, file=NA,view=FALSE,resize=1) {
+ggtable2 <- function(data , rows, cols, file=NA,view=FALSE,resize=1,sideway=F) {
 	
   # I have to create the tree structure, some parts might be empty
   # I have a list, of variables
@@ -198,6 +198,11 @@ ggtable2 <- function(data , rows, cols, file=NA,view=FALSE,resize=1) {
     TABLE_FOOTER_STR =  paste(TABLE_FOOTER_STR , " \r\n } \r\n")
   }
 
+  if (sideway) {
+    HEADER_STR =  paste("\\begin{landscape} \\begin{sidewaystable} \r\n",HEADER_STR)
+    TABLE_FOOTER_STR =  paste(TABLE_FOOTER_STR , " \r\n \\end{sidewaystable} \\end{landscape} \r\n")
+  }
+
   if (!is.na(file)) {
     cat(paste(HEADER_STR , TABLE_BODY_STR,TABLE_FOOTER_STR),file= file)
   } else {
@@ -205,7 +210,7 @@ ggtable2 <- function(data , rows, cols, file=NA,view=FALSE,resize=1) {
   }
 
   if (view==TRUE) {
-    HEADER_STR =  paste("\\documentclass[12pt]{article}  \r\n \\usepackage{booktabs}\r\n \\usepackage{fullpage}  \r\n \\usepackage{booktabs}\r\n \\usepackage{graphicx} \r\n \\begin{document} \r\n",HEADER_STR)
+    HEADER_STR =  paste("\\documentclass[12pt]{article} \\usepackage{lscape} \\usepackage{rotating} \r\n \\usepackage{booktabs}\r\n \\usepackage{fullpage}  \r\n \\usepackage{booktabs}\r\n \\usepackage{graphicx} \r\n \\begin{document} \r\n",HEADER_STR)
     TABLE_FOOTER_STR =  paste(TABLE_FOOTER_STR , " \r\n \\end{document} \r\n")
     cat(paste(HEADER_STR , TABLE_BODY_STR,TABLE_FOOTER_STR),file= paste(file,'.tex',sep=''))
     system(paste('pdflatex ', file,  '.tex' ,sep=''))
@@ -213,4 +218,22 @@ ggtable2 <- function(data , rows, cols, file=NA,view=FALSE,resize=1) {
   }
   
   return()
+}
+
+
+ggtable2.test <-function() {
+
+  data(french_fries)
+  
+  mm = ddply(french_fries,c('treatment'),function(d) {
+    sfit = summary(lm(potato ~ time-1,d))
+    r = data.frame(sfit$coef)
+    r$variable = rownames(sfit$coef)
+    return(r) 
+  })
+
+  mm = renameany(mm,c('Estimate'='value'))
+  ggtable2(mm,c('treatment'),c('variable'),view=T,sideway=T)
+
+
 }
