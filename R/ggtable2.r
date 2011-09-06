@@ -27,11 +27,11 @@
 # of rows and cols and the content of the cell. For now we will force 
 # the cells to be 2x2 and so we should have also this as an id
 
-#taes <- function (x, y, ...) 
-#{
-#    aes <- structure(as.list(match.call()[-1]), class = "uneval")
-#    return(aes)
-#}
+taes <- function (x, y, ...) 
+{
+    aes <- structure(as.list(match.call()[-1]), class = "uneval")
+    return(aes)
+}
 
 ggt_cell_plain <- function(data=NA,desc=list(value='value')) {
  format <- function(ids,pdesc=NA,pdata=data) {
@@ -54,8 +54,24 @@ ggt_cell_plain <- function(data=NA,desc=list(value='value')) {
   return(format)
 }
 
+# there are 2 ways to specify lines
+# 1) you give an id var and the line will be added
+# whenever the value of that id changes ( in columns or lines)
+# 2) you give the value of an id var, then the line will be added
+# whenever this value appears
+# baasically the idvarvalue says only add the line after that 
+# given value
 
-ggt_lines <- function(varlist) {}
+ggt_line <- function(var, values = c(), type='single') {
+
+  res= list()
+  res$var = var
+  res$vals = values
+  res$type = type
+
+  class(res) <- 'ggt_line'
+  return(res)
+}
 
 ggt_rename <- function() {}
 
@@ -83,8 +99,9 @@ ggtable <- function(formula,verbose=FALSE) {
 
   v = all.vars.character(formula)
 
-  gg1  = list()
-  gg1$orders = list()
+  gg1          = list()
+  gg1$orders   = list()
+  gg1$lineseps = c()
 
   gg1$rows = v$m[[1]]
   gg1$cols = v$m[[2]]
@@ -109,6 +126,11 @@ ggtable <- function(formula,verbose=FALSE) {
     LL = list(argb$orders)
     names(LL)<- argb$varname
     ggt$orders = c(LL, ggt$orders)
+  }
+
+  # add lines
+  if (class(argb) == 'ggt_line') {
+    ggt$lineseps[[ length(ggt$linseps) +1  ]] = argb
   }
 
   # if b is of type cell, we add it to the list of cells
@@ -184,42 +206,76 @@ print.ggtable <- function(ggt) {
   # of the variavle given in ids
 
   # we get the structure for the rows and cols
-  rowframe = ggt_getIDLevels(cdata,ggt$rows,ggt$orders)
-  colframe = ggt_getIDLevels(cdata,ggt$cols,ggt$orders)
+  rowframe = data.table(ggt_getIDLevels(cdata,ggt$rows,ggt$orders))
+  colframe = data.table(ggt_getIDLevels(cdata,ggt$cols,ggt$orders))
   
   # next we generate the headers for the columns
   
+  BODY_STR = ''
 
   # we generate the body
   # we go through each row/col combination
   # get values from cdata and concat it!
   for (ro in 1:nrow(rowframe)) {
+
+    UPPER_LINE = ''; LOWER_LINE = '';
+    UPPER_LINE_HAS_VALUE = FALSE; LOWER_LINE_HAS_VALUE = FALSE;
+
     for (co in 1:nrow(colframe)) {
       
       # get the line in cdata  that corresponds to the value
       T = data.table(c(rowframe[ro,],colframe[co,])) 
-        
-      
+              
+      # get the cell content
+      ld = cdata[T,] 
 
+      # put the cell together
+      UPPER_LINE = paste(UPPER_LINE , ' & ' , ld[x==1 & y==1]$value , 
+                                      ' & ' , ld[x==1 & y==2]$value ,sep='') 
+      LOWER_LINE = paste(LOWER_LINE , ' & ' , ld[x==2 & y==1]$value , 
+                                      ' & ' , ld[x==2 & y==2]$value ,sep='') 
 
+      UPPER_LINE_HAS_VALUE = (UPPER_LINE_HAS_VALUE |  (ld[x==1 & y==1]$hasValue) |  (ld[x==1 & y==2]$hasValue))
+      LOWER_LINE_HAS_VALUE = (LOWER_LINE_HAS_VALUE |  (ld[x==2 & y==1]$hasValue) |  (ld[x==2 & y==2]$hasValue))
 
     }
+
+    # closing the lines
+    if (UPPER_LINE_HAS_VALUE) {
+      BODY_STR = paste(BODY_STR, UPPER_LINE , ' \\ \n ',sep='') 
+    }
+    
+    if ( LOWER_LINE_HAS_VALUE ) {
+      BODY_STR = paste(BODY_STR, LOWER_LINE , ' \\ \n ',sep='') 
+    }
+
+    # adding line styles
+    # first we need to find which idvars have changed on that row
+    if (ro<nrow(rowframe)) {
+      rtest = (rowframe[ro,] != rowframe[ro+1,])
+      rtest = names(rtest[,rtest])
+    } else {
+      rtest=NULL
+    }
+    # we go through each linsep. check if the variable matches
+    for ( lsep in ggt$lineseps ) {
+      idvar = lsep$var
+      if ( idvar %in% rtest ) {
+         BODY_STR = paste(BODY_STR, '\\hline \n ',sep='') 
+      } 
+    }
+
+    # pasting on body
   }
 
-
-
-
-
-
-
-
+  return(BODY_STR)
 }
-
-
 
 # EXAMPLE
 
-ggt <- ggtable(treatment ~ variable) + ggt_cell_plain(mm,list(value='Estimate')) + 
-       ggt_order('treatment',c('1','2'))
+ggt <- ggtable(treatment ~ variable) + 
+  ggt_cell_plain(mm,taes(value='Estimate')) + 
+  ggt_order('treatment',c('1','2')) + ggt_order('variable',c('time4')) +
+  ggt_line('treatment')
 
-print(ggt)
+cat(print(ggt))
