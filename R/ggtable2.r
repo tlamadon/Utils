@@ -27,6 +27,10 @@
 # of rows and cols and the content of the cell. For now we will force 
 # the cells to be 2x2 and so we should have also this as an id
 
+require(reshape)
+require(data.table)
+
+
 taes <- function (x, y, ...) 
 {
     aes <- structure(as.list(match.call()[-1]), class = "uneval")
@@ -45,7 +49,7 @@ ggt_cell_plain <- function(data=NA,desc=list(value='value')) {
    return(ddply(data, ids, function(d) { 
        d2 = expand.grid(x=1:2,y=1:2,value='',hasValue=FALSE)
        d2$value       = as.character(d2$value)
-       d2$value[1]    = paste(d[1,desc$value])
+       d2$value[1]    = paste(round(d[1,desc$value],2))
        d2$hasValue[1] = TRUE
        return(d2)
    }))
@@ -62,7 +66,7 @@ ggt_cell_plain <- function(data=NA,desc=list(value='value')) {
 # baasically the idvarvalue says only add the line after that 
 # given value
 
-ggt_line <- function(var, values = c(), type='single') {
+ggt_line <- function(var, values = c(), type='|') {
 
   res= list()
   res$var = var
@@ -195,7 +199,7 @@ ggt_computeSelector <- function(cdata,selector) {
   return(I)
 }
 
-print.ggtable <- function(ggt) {
+print.ggtable <- function(ggt,file=NA,view=TRUE) {
   
   cdata = ggt$cells
 
@@ -211,11 +215,15 @@ print.ggtable <- function(ggt) {
   
   # next we generate the headers for the columns
   
+  #        BODY
+  # =================
+
   BODY_STR = ''
 
   # we generate the body
   # we go through each row/col combination
   # get values from cdata and concat it!
+  colframe$hasValue = FALSE
   for (ro in 1:nrow(rowframe)) {
 
     UPPER_LINE = ''; LOWER_LINE = '';
@@ -225,9 +233,11 @@ print.ggtable <- function(ggt) {
       
       # get the line in cdata  that corresponds to the value
       T = data.table(c(rowframe[ro,],colframe[co,])) 
-              
+      T$hasValue <- NULL # removing the hasValue        
+
       # get the cell content
-      ld = cdata[T,] 
+      ld = cdata[T,]
+      if (is.na(ld$hasValue[1])) next;
 
       # put the cell together
       UPPER_LINE = paste(UPPER_LINE , ' & ' , ld[x==1 & y==1]$value , 
@@ -237,16 +247,17 @@ print.ggtable <- function(ggt) {
 
       UPPER_LINE_HAS_VALUE = (UPPER_LINE_HAS_VALUE |  (ld[x==1 & y==1]$hasValue) |  (ld[x==1 & y==2]$hasValue))
       LOWER_LINE_HAS_VALUE = (LOWER_LINE_HAS_VALUE |  (ld[x==2 & y==1]$hasValue) |  (ld[x==2 & y==2]$hasValue))
-
+      
+      colframe$hasValue[co] = colframe$hasValue[co] | any(ld$hasValue)
     }
 
     # closing the lines
     if (UPPER_LINE_HAS_VALUE) {
-      BODY_STR = paste(BODY_STR, UPPER_LINE , ' \\ \n ',sep='') 
+      BODY_STR = paste(BODY_STR, paste( data.frame(rowframe)[ro,length(ggt$rows)] ), UPPER_LINE , ' \\\\ \n ',sep='') 
     }
     
     if ( LOWER_LINE_HAS_VALUE ) {
-      BODY_STR = paste(BODY_STR, LOWER_LINE , ' \\ \n ',sep='') 
+      BODY_STR = paste(BODY_STR, LOWER_LINE , ' \\\\ \n ',sep='') 
     }
 
     # adding line styles
@@ -264,18 +275,84 @@ print.ggtable <- function(ggt) {
          BODY_STR = paste(BODY_STR, '\\hline \n ',sep='') 
       } 
     }
-
-    # pasting on body
   }
 
-  return(BODY_STR)
+  #   TABLE HEADER
+  # ================
+  # we are going through each variable, and create a line for each
+  # we need to span over columns where it remains constant
+  # we also need to create the string that will go in the tabular
+  colframe = data.frame(colframe)
+  colframe$linesep = ''
+  HEADER =''
+  for (v in ggt$cols) {
+    LINE = ''
+    val = colframe[1,v]
+    lastcol=1
+    for (co in 1:nrow(colframe)) {
+      if ( (colframe[co,v] != val) | (co == nrow(colframe))) {
+        LINE = paste(LINE, ' & \\multicolumn{',  2*(co - lastcol),'}{c}{',
+                     paste(val),'}')
+        val = colframe[co,v]
+        lastcol=co
+
+        # checking for linesep and adding the highest
+        for (lsep in ggt$lineseps) {
+          if (v == lsep$var & co != nrow(colframe)) {
+            colframe$linesep[co] = lsep$type
+          }
+        }
+      }
+    }
+    HEADER = paste(HEADER,LINE,'\\\\ \n')
+  }
+  
+ # WRAPPING THE TABLE
+ # ==================
+ colformat = paste('r' ,paste(colframe$linesep,' r@{}l ', collapse =''))
+ HEADER_STR = paste("\\begin{tabular}{ ", colformat , "} \n")
+ HEADER_STR = paste(  HEADER_STR , " \\toprule \n")  
+ HEADER_STR = paste( HEADER_STR , HEADER)
+ HEADER_STR = paste(  HEADER_STR , " \\midrule \n")
+
+ TABLE_FOOTER_STR = paste("\\bottomrule \n")
+ TABLE_FOOTER_STR = paste(TABLE_FOOTER_STR , "\\end{tabular} \n")
+
+  if (!is.na(file)) {
+    cat(paste(HEADER_STR , BODY_STR,TABLE_FOOTER_STR),file= file)
+  } else {
+    file = '.ggt.tmp'
+  }
+
+  if (view==TRUE) {
+    HEADER_STR =  paste("\\documentclass[12pt]{article} \\usepackage{lscape} \\usepackage{rotating} \n \\usepackage{booktabs}\n \\usepackage{fullpage}  \n \\usepackage{booktabs}\n \\usepackage{graphicx} \n \\begin{document} \n",HEADER_STR)
+    TABLE_FOOTER_STR =  paste(TABLE_FOOTER_STR , " \n \\end{document} \n")
+    cat(paste(HEADER_STR , BODY_STR,TABLE_FOOTER_STR),file= paste(file,'.tex',sep=''))
+    system(paste('pdflatex ', file,  '.tex' ,sep=''))
+    system(paste('open ', file,  '.pdf' ,sep=''))
+  }
+
+ return((paste(HEADER_STR , BODY_STR,TABLE_FOOTER_STR)))
 }
 
 # EXAMPLE
+data(french_fries)
 
-ggt <- ggtable(treatment ~ variable) + 
-  ggt_cell_plain(mm,taes(value='Estimate')) + 
-  ggt_order('treatment',c('1','2')) + ggt_order('variable',c('time4')) +
-  ggt_line('treatment')
+# let's do 1 regression per rep
+dt = ddply(french_fries,.(rep),function(d) {
+ sfit = summary(lm(potato~treatment,d))
+ res1 = data.frame(sfit$coef)
+ res1$varname = rownames(sfit$coef)
+ res1$reg = 'potato'
+ sfit = summary(lm(potato~treatment,d))
+ res2 = data.frame(sfit$coef)
+ res2$varname = rownames(sfit$coef)
+ res2$reg = 'buttery'
+ return(rbind(res1,res2))
+})
 
+ggt <- ggtable(reg + varname ~ rep) + 
+  ggt_cell_plain(dt,taes(value='Estimate'))+
+  ggt_order('varname',c('treatment2')) + ggt_order('variable',c('time4')) +
+  ggt_line('reg')
 cat(print(ggt))
