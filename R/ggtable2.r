@@ -40,6 +40,38 @@ ggt_cell_plain <- function(data=NA,desc=list(value='value')) {
   return(format)
 }
 
+ggt_cell_regression <- function(data=NA,desc=list(value='Estimate',sd='Std..Error',pval='Pr...t..')) {
+ format <- function(ids,pdesc=NA,pdata=data) {
+  
+   # local argument overide the one from ggtable 
+   if ( any(is.na(desc)) ) desc = pdesc;
+   if ( any(is.na(data)) ) data = pdata;
+
+   # here we are just going to paste the value in the
+   # upper left quadrant of the cell tile
+   return(ddply(data, ids, function(d) { 
+       d2 = expand.grid(x=1:2,y=1:2,value='',hasValue=FALSE)
+       d2$value       = as.character(d2$value)
+
+       d2$value[1]    = paste(round(d[1,desc$value],2))
+       d2$hasValue[1] = TRUE
+
+       if ( d[1,desc$pval] < 0.05) {
+         d2$value[3]    = '*'
+         d2$hasValue[3] = TRUE
+       }
+
+       d2$value[2]    = paste('{\\footnotesize (' , round(d[1,desc$sd],2), ')}',sep='')
+       d2$hasValue[2] = TRUE
+
+
+       return(d2)
+   }))
+  }
+  class(format) <- 'ggt_cell'
+  return(format)
+}
+
 # there are 2 ways to specify lines
 # 1) you give an id var and the line will be added
 # whenever the value of that id changes ( in columns or lines)
@@ -353,7 +385,7 @@ dt = ddply(french_fries,.(rep),function(d) {
 })
 
 ggt <- ggtable(reg+varname ~  rep) + 
-  ggt_cell_plain(dt,taes(value='Estimate'))+
+  ggt_cell_regression(dt)+
   ggt_order('varname',c('treatment2','treatment1')) +
   ggt_order('variable',c('time4')) +
   ggt_line('reg')
