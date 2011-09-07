@@ -148,6 +148,9 @@ ggtable <- function(formula,verbose=FALSE) {
 # this function returns a data.frame with values applying
 # the order given in orders -- this is used to compute
 # values that go into columns and rows
+# the rows are first stratified by the values of 
+# the variable in order -- within that they get ranked
+# using the supplied order
 ggt_getIDLevels <- function(cdata, vars, orders=list()) {
  
   # we start by collecting the relevant columns
@@ -160,23 +163,26 @@ ggt_getIDLevels <- function(cdata, vars, orders=list()) {
   # if there is one, we apply the value in the list to the given value
   # then we give 
   # we are going to compute the value of each row and then sort it! 
-  multv = nrow(dtmp)
+  N = nrow(dtmp)
+  multv = N
+
+  # for each selector in reverse order 
   for ( v in rev(vars)) {
-    if ( v %in% names(orders)) {
-      od = orders[v][[1]]
-      # for each value, we set the actual order
-      i = 1
-      for (val in rev(od)) {
-        if (is.factor(dtmp[,v]  )) {
-          I = levels(dtmp[,v])[dtmp[,v]] == val
-        } else {
-          I = dtmp[,v] == val
-        }
-        dtmp$my_order__[I] = dtmp$my_order__[I] + i * multv
-        i = i+1
+    od = orders[v][[1]]                                # we get the corresponding order
+    vals = union(od[[1]],setdiff(unique(dtmp[,v]),od)) # combine order with values
+    
+    # go through vals in reverse order and add the index value
+    i = 1
+    for (val in rev(vals)) {
+      if (is.factor(dtmp[,v]  )) {
+        I = levels(dtmp[,v])[dtmp[,v]] == val
+      } else {
+        I = dtmp[,v] == val
       }
+      dtmp$my_order__[I] = dtmp$my_order__[I] + i * multv
+      i = i+1
     }
-     multv = multv * nrow(dtmp)
+    multv = multv * N
   }
 
   dtmp = dtmp[rev(order(dtmp$my_order__)),c(vars,'my_order__')]
@@ -353,6 +359,6 @@ dt = ddply(french_fries,.(rep),function(d) {
 
 ggt <- ggtable(reg + varname ~ rep) + 
   ggt_cell_plain(dt,taes(value='Estimate'))+
-  ggt_order('varname',c('treatment2')) + ggt_order('variable',c('time4')) +
+  ggt_order('varname',c('treatment2','treatment1')) + ggt_order('variable',c('time4')) +
   ggt_line('reg')
 cat(print(ggt))
