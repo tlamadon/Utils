@@ -1,31 +1,13 @@
 # new version of ggtable
 
+# this is a priliminary version of a package that would like
+# to be the analogous of ggplot for latex tables
+# you can contact me at thibaut.lamadon@gmail.com
+
 # ability to add cell style
 # + ggt_cell(textcolor=var1,
-# ability to add padding
-# + ggt_border(padding, dotted=, dline=, sline=)
-# ability to add orders and sorting
-# + ggt_order(
-# ability to add rows/columns
 # add table options
 # ggt_options(caption= , note = ,resize= , flip=)
-
-# a class ggtable will have a list of rows and a list of column
-# selector, then it will have a list of data set with each 
-# different cell processors that will create the content
-# of the cell
-
-# print.ggtable will go through the list of cells and process them
-
-
-# one important bit is the cell renderer, it will take a list of values
-# and create the cell content, the problem is that the cell representation
-# might include several cols/rows to have parenthesis and star/daggers
-# for example
-
-# step 1, for each ggt_cell a data.frame is created with id the combination of
-# of rows and cols and the content of the cell. For now we will force 
-# the cells to be 2x2 and so we should have also this as an id
 
 require(reshape)
 require(data.table)
@@ -205,6 +187,27 @@ ggt_computeSelector <- function(cdata,selector) {
   return(I)
 }
 
+ggt_computeSpan <- function(sdata,varname) {
+
+  sdata = data.frame(sdata)
+  sdata[,varname] = as.character(sdata[,varname])
+
+  res = data.frame()
+  val = sdata[1,varname]
+  lastcount=1
+  for (i in 1:nrow(sdata)) {
+    if (val!= sdata[i,varname]) {
+      res = rbind(res,data.frame(val=val,count= i - lastcount))
+      val = sdata[i,varname]
+      lastcount = i
+    }
+  }
+  # append last one
+  res = rbind(res,data.frame(val=val,count= i - lastcount+1))
+
+  return(res)
+}
+
 print.ggtable <- function(ggt,file=NA,view=TRUE) {
   
   cdata = ggt$cells
@@ -274,6 +277,7 @@ print.ggtable <- function(ggt,file=NA,view=TRUE) {
     } else {
       rtest=NULL
     }
+
     # we go through each linsep. check if the variable matches
     for ( lsep in ggt$lineseps ) {
       idvar = lsep$var
@@ -281,6 +285,8 @@ print.ggtable <- function(ggt,file=NA,view=TRUE) {
          BODY_STR = paste(BODY_STR, '\\hline \n ',sep='') 
       } 
     }
+
+    # 
   }
 
   #   TABLE HEADER
@@ -292,25 +298,10 @@ print.ggtable <- function(ggt,file=NA,view=TRUE) {
   colframe$linesep = ''
   HEADER =''
   for (v in ggt$cols) {
-    LINE = ''
-    val = colframe[1,v]
-    lastcol=1
-    for (co in 1:nrow(colframe)) {
-      if ( (colframe[co,v] != val) | (co == nrow(colframe))) {
-        LINE = paste(LINE, ' & \\multicolumn{',  2*(co - lastcol),'}{c}{',
-                     paste(val),'}')
-        val = colframe[co,v]
-        lastcol=co
+    spaninfo = ggt_computeSpan(colframe,v)
 
-        # checking for linesep and adding the highest
-        for (lsep in ggt$lineseps) {
-          if (v == lsep$var & co != nrow(colframe)) {
-            colframe$linesep[co] = lsep$type
-          }
-        }
-      }
-    }
-    HEADER = paste(HEADER,LINE,'\\\\ \n')
+    LINE = paste( '\\multicolumn{',  2*spaninfo$count ,'}{c}{', spaninfo$val ,'}' , collapse=' & ')
+    HEADER = paste(HEADER,'&',LINE,'\\\\ \n')
   }
   
  # WRAPPING THE TABLE
@@ -332,10 +323,14 @@ print.ggtable <- function(ggt,file=NA,view=TRUE) {
 
   if (view==TRUE) {
     HEADER_STR =  paste("\\documentclass[12pt]{article} \\usepackage{lscape} \\usepackage{rotating} \n \\usepackage{booktabs}\n \\usepackage{fullpage}  \n \\usepackage{booktabs}\n \\usepackage{graphicx} \n \\begin{document} \n",HEADER_STR)
-    TABLE_FOOTER_STR =  paste(TABLE_FOOTER_STR , " \n \\end{document} \n")
+    TABLE_FOOTER_STR =  paste(TABLE_FOOTER_STR , " \n \\thispagestyle{empty} \\end{document} \n")
     cat(paste(HEADER_STR , BODY_STR,TABLE_FOOTER_STR),file= paste(file,'.tex',sep=''))
     system(paste('pdflatex ', file,  '.tex' ,sep=''))
     system(paste('open ', file,  '.pdf' ,sep=''))
+    #system(paste('latex ' , file,  '.tex' ,sep=''))
+    #system(paste('dvipng ', file,  '.dvi' ,sep=''))
+    #system(paste('open '  , file,  '1.png' ,sep=''))
+    
   }
 
  return((paste(HEADER_STR , BODY_STR,TABLE_FOOTER_STR)))
@@ -357,8 +352,9 @@ dt = ddply(french_fries,.(rep),function(d) {
  return(rbind(res1,res2))
 })
 
-ggt <- ggtable(reg + varname ~ rep) + 
+ggt <- ggtable(reg+varname ~  rep) + 
   ggt_cell_plain(dt,taes(value='Estimate'))+
-  ggt_order('varname',c('treatment2','treatment1')) + ggt_order('variable',c('time4')) +
+  ggt_order('varname',c('treatment2','treatment1')) +
+  ggt_order('variable',c('time4')) +
   ggt_line('reg')
 cat(print(ggt))
