@@ -9,14 +9,29 @@
 # add table options
 # ggt_options(caption= , note = ,resize= , flip=)
 
+
+# TODOS
+# - sideway / resize option / center
+# - dictionary option
+# - vertical line
+# - color background
+# - title / label
+# - row groups titles
+# - render latex in titles / remove underscores / escape
+
 require(reshape)
 require(data.table)
-
+require(gdata)
 
 taes <- function (x, y, ...) 
 {
     aes <- structure(as.list(match.call()[-1]), class = "uneval")
     return(aes)
+}
+
+ggt_labeller <- function(str) {
+  str = gsub('_',' ',paste(str))
+  return(str)
 }
 
 ggt_cell_plain <- function(data=NA,desc=list(value='value')) {
@@ -53,17 +68,21 @@ ggt_cell_regression <- function(data=NA,desc=list(value='Estimate',sd='Std..Erro
        d2 = expand.grid(x=1:2,y=1:2,value='',hasValue=FALSE)
        d2$value       = as.character(d2$value)
 
-       d2$value[1]    = paste(round(d[1,desc$value],2))
+       d2$value[1]    = paste(prettyNum(d[1,desc$value],digit=3))
        d2$hasValue[1] = TRUE
 
-       if ( d[1,desc$pval] < 0.05) {
+
+       if ( (!is.na(d[1,desc$pval]) & ( d[1,desc$pval] < 0.05)) {
          d2$value[3]    = '*'
          d2$hasValue[3] = TRUE
        }
 
-       d2$value[2]    = paste('{\\footnotesize (' , round(d[1,desc$sd],2), ')}',sep='')
-       d2$hasValue[2] = TRUE
-
+       if ( ! is.na(d[1,desc$sd])) {
+         d2$value[2]    = paste('{\\scriptsize (' , prettyNum(d[1,desc$sd],digit=3), ')}',sep='')
+         d2$hasValue[2] = TRUE
+       } else {
+         d2$value[2] = '--'
+       }
 
        return(d2)
    }))
@@ -267,9 +286,19 @@ print.ggtable <- function(ggt,file=NA,view=TRUE) {
   colframe$hasValue = FALSE
   for (ro in 1:nrow(rowframe)) {
 
+    # adding the line category
+    if ( length(ggt$rows)>1 & ((ro==1) | 
+           any( data.table(rowframe)[ro,1:(length(ggt$rows)-1)] != 
+                data.table(rowframe)[ro-1,1:(length(ggt$rows)-1)]))) {
+
+      BODY_STR = paste(BODY_STR,"\\multicolumn{4}{l}{ \\bf", ggt_labeller(data.frame(rowframe)[ro,1]),"} \\\\ \n")
+    }
+
     UPPER_LINE = ''; LOWER_LINE = '';
     UPPER_LINE_HAS_VALUE = FALSE; LOWER_LINE_HAS_VALUE = FALSE;
 
+
+    # adding cells
     for (co in 1:nrow(colframe)) {
       
       # get the line in cdata  that corresponds to the value
@@ -294,11 +323,11 @@ print.ggtable <- function(ggt,file=NA,view=TRUE) {
 
     # closing the lines
     if (UPPER_LINE_HAS_VALUE) {
-      BODY_STR = paste(BODY_STR, paste( data.frame(rowframe)[ro,length(ggt$rows)] ), UPPER_LINE , ' \\\\ \n ',sep='') 
+      BODY_STR = paste(BODY_STR, paste( data.frame(rowframe)[ro,length(ggt$rows)] ), UPPER_LINE , ' \\\\[-4pt] \n ',sep='') 
     }
     
     if ( LOWER_LINE_HAS_VALUE ) {
-      BODY_STR = paste(BODY_STR, LOWER_LINE , ' \\\\ \n ',sep='') 
+      BODY_STR = paste(BODY_STR, LOWER_LINE , ' \\\\[1pt] \n ',sep='') 
     }
 
     # adding line styles
@@ -318,8 +347,7 @@ print.ggtable <- function(ggt,file=NA,view=TRUE) {
       } 
     }
 
-    # 
-  }
+   }
 
   #   TABLE HEADER
   # ================
@@ -332,7 +360,7 @@ print.ggtable <- function(ggt,file=NA,view=TRUE) {
   for (v in ggt$cols) {
     spaninfo = ggt_computeSpan(colframe,v)
 
-    LINE = paste( '\\multicolumn{',  2*spaninfo$count ,'}{c}{', spaninfo$val ,'}' , collapse=' & ')
+    LINE = paste( '\\multicolumn{',  2*spaninfo$count ,'}{c}{', ggt_labeller(spaninfo$val) ,'}' , collapse=' & ')
     HEADER = paste(HEADER,'&',LINE,'\\\\ \n')
   }
   
@@ -362,7 +390,6 @@ print.ggtable <- function(ggt,file=NA,view=TRUE) {
     #system(paste('latex ' , file,  '.tex' ,sep=''))
     #system(paste('dvipng ', file,  '.dvi' ,sep=''))
     #system(paste('open '  , file,  '1.png' ,sep=''))
-    
   }
 
  return((paste(HEADER_STR , BODY_STR,TABLE_FOOTER_STR)))
@@ -384,7 +411,7 @@ dt = ddply(french_fries,.(rep),function(d) {
  return(rbind(res1,res2))
 })
 
-ggt <- ggtable(reg+varname ~  rep) + 
+ggt <- ggtable(reg + varname ~ rep) + 
   ggt_cell_regression(dt)+
   ggt_order('varname',c('treatment2','treatment1')) +
   ggt_order('variable',c('time4')) +
