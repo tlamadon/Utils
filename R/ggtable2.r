@@ -72,7 +72,7 @@ ggt_cell_regression <- function(data=NA,desc=list(value='Estimate',sd='Std..Erro
        d2$hasValue[1] = TRUE
 
 
-       if ( (!is.na(d[1,desc$pval]) & ( d[1,desc$pval] < 0.05)) {
+       if ( (!is.na(d[1,desc$pval]) & ( d[1,desc$pval] < 0.05))) {
          d2$value[3]    = '*'
          d2$hasValue[3] = TRUE
        }
@@ -403,7 +403,7 @@ dt = ddply(french_fries,.(rep),function(d) {
  sfit = summary(lm(potato~treatment,d))
  res1 = data.frame(sfit$coef)
  res1$varname = rownames(sfit$coef)
- res1$reg = 'potato'
+ res1$reg = 'potato_taste'
  sfit = summary(lm(potato~treatment,d))
  res2 = data.frame(sfit$coef)
  res2$varname = rownames(sfit$coef)
@@ -411,7 +411,7 @@ dt = ddply(french_fries,.(rep),function(d) {
  return(rbind(res1,res2))
 })
 
-ggt <- ggtable(reg + varname ~ rep) + 
+ggt <- ggtable( varname ~ reg + rep) + 
   ggt_cell_regression(dt)+
   ggt_order('varname',c('treatment2','treatment1')) +
   ggt_order('variable',c('time4')) +
