@@ -29,7 +29,7 @@ taes <- function (x, y, ...)
     return(aes)
 }
 
-ggt_labeller <- function(str) {
+ggt_labeller <- function(str,ll) {
   str = gsub('_',' ',paste(str))
   return(str)
 }
@@ -110,7 +110,10 @@ ggt_line <- function(var, values = c(), type='|') {
   return(res)
 }
 
-ggt_rename <- function() {}
+ggt_rename <- function(ll = list()) {
+  class(ll) <- 'ggt_rename'
+  return(ll)
+}
 
 # this gives an id variable and a list of values
 # that specifies the order in which they should appear
@@ -144,6 +147,7 @@ ggtable <- function(formula,verbose=FALSE) {
   gg1$cols = v$m[[2]]
 
   gg1$cells = data.frame()
+  gg1$rename = list()
 
   class(gg1) <- 'ggtable'
   return(gg1)
@@ -168,6 +172,11 @@ ggtable <- function(formula,verbose=FALSE) {
   # add lines
   if (class(argb) == 'ggt_line') {
     ggt$lineseps[[ length(ggt$linseps) +1  ]] = argb
+  }
+
+  # add rename
+  if (class(argb) == 'ggt_rename') {
+    ggt$rename = argb
   }
 
   # if b is of type cell, we add it to the list of cells
@@ -291,7 +300,7 @@ print.ggtable <- function(ggt,file=NA,view=TRUE) {
            any( data.table(rowframe)[ro,1:(length(ggt$rows)-1)] != 
                 data.table(rowframe)[ro-1,1:(length(ggt$rows)-1)]))) {
 
-      BODY_STR = paste(BODY_STR,"\\multicolumn{4}{l}{ \\bf", ggt_labeller(data.frame(rowframe)[ro,1]),"} \\\\ \n")
+      BODY_STR = paste(BODY_STR,"\\multicolumn{4}{l}{ \\bf", ggt_labeller(data.frame(rowframe)[ro,1],ggt$rename),"} \\\\ \n")
     }
 
     UPPER_LINE = ''; LOWER_LINE = '';
@@ -360,7 +369,7 @@ print.ggtable <- function(ggt,file=NA,view=TRUE) {
   for (v in ggt$cols) {
     spaninfo = ggt_computeSpan(colframe,v)
 
-    LINE = paste( '\\multicolumn{',  2*spaninfo$count ,'}{c}{', ggt_labeller(spaninfo$val) ,'}' , collapse=' & ')
+    LINE = paste( '\\multicolumn{',  2*spaninfo$count ,'}{c}{', ggt_labeller(spaninfo$val,ggt$rename) ,'}' , collapse=' & ')
     HEADER = paste(HEADER,'&',LINE,'\\\\ \n')
   }
   
