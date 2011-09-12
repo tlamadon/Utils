@@ -30,6 +30,8 @@ taes <- function (x, y, ...)
 }
 
 ggt_labeller <- function(str,ll) {
+
+
   str = gsub('_',' ',paste(str))
   return(str)
 }
@@ -424,5 +426,5 @@ ggt <- ggtable( varname ~ reg + rep) +
   ggt_cell_regression(dt)+
   ggt_order('varname',c('treatment2','treatment1')) +
   ggt_order('variable',c('time4')) +
-  ggt_line('reg')
+  ggt_line('reg') 
 cat(print(ggt))
