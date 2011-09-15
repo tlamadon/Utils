@@ -18,7 +18,16 @@
 # 4) combining when some columns are missing (but I guess this is a sort 
 # of merge)
 
-mappend <- function(d,variable,value) {
+
+# I think a gcast function that would take sg like  var1 + var2 + var3 ~ var4 +var5 ....
+# but where vars can be either level names or column names would be pretty awesome
+
+# mcompute ( newvar = formula | ids ) 
+# should use variable name in either col or levels, 
+# if ... is given , then it should just do it by the variable that are mentioned
+# basically trying to find the best set of id, the finer set of id ( risking doing it on sd as well ....)
+
+mappend <- function(d,variable,value,.varcol='variable',.valcol='value') {
   non_cst_var = c()
   for (v in names(d)) {
     if ( length(unique(d[,v]))>1) non_cst_var = c(non_cst_var,v);
@@ -26,8 +35,8 @@ mappend <- function(d,variable,value) {
 
   new_line = d[1,]
   new_line[,non_cst_var] = NA
-  new_line$value[1] = value
-  new_line$variable = variable
+  new_line[1,.valcol  ] = value
+  new_line[1,.varcol  ] = variable
   d = rbind(d,new_line)
 
   return(d)
@@ -93,7 +102,7 @@ renameany <-function(d,rules) {
   #1) we rename the columns
   d = rename(d,rules)
 
-  #2) try to rename the levels in the variables
+  #2) try to rename the levels in the variadbles
   for ( n in names(rules)) {
     for ( c in colnames(d)) {
       
