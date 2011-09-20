@@ -23,6 +23,43 @@ require(reshape)
 require(data.table)
 require(gdata)
 
+model2frame <-function(models) {
+
+  models = c(models)
+
+  r=data.frame()
+  i=0
+
+  for (m in models) {
+    # adding the coeffs
+    if (class(m)=='mer') {
+      coefs = summary(m)@coefs
+    } else {
+      coefs = summary(m)$coef
+    }
+
+    if (ncol(coefs)>=4) {
+       ld = data.frame(coefs[,c(1,2,4)])
+    } else {
+       ld = data.frame(value = coefs[,1], sd = coefs[,2] ,pval=rep(NA,nrow(coefs)))
+    }
+    colnames(ld) <- c('value','sd','pval')
+    ld$variable = rownames(coefs)
+    rownames(ld) <- NULL
+
+    # adding a BIC/AIC
+    ld = rbind(ld, data.frame(variable = 'BIC', value = BIC(m),sd=NA,pval=NA ))
+
+    ld$model=i                          
+    r =rbind(r,ld)
+    i =i+1
+  }
+
+  return(r)
+}
+
+
+
 taes <- function (x, y, ...) 
 {
     aes <- structure(as.list(match.call()[-1]), class = "uneval")
@@ -55,6 +92,10 @@ ggt_cell_plain <- function(data=NA,desc=list(value='value')) {
   }
   class(format) <- 'ggt_cell'
   return(format)
+}
+
+ggt_note <- function(str) {
+
 }
 
 ggt_cell_regression <- function(data=NA,desc=list(value='Estimate',sd='Std..Error',pval='Pr...t..')) {
@@ -92,6 +133,11 @@ ggt_cell_regression <- function(data=NA,desc=list(value='Estimate',sd='Std..Erro
   class(format) <- 'ggt_cell'
   return(format)
 }
+
+ggt_opts <- function(ll) {
+
+}
+
 
 # there are 2 ways to specify lines
 # 1) you give an id var and the line will be added
@@ -407,24 +453,24 @@ print.ggtable <- function(ggt,file=NA,view=TRUE) {
 }
 
 # EXAMPLE
-data(french_fries)
+#data(french_fries)
+#
+## let's do 1 regression per rep
+#dt = ddply(french_fries,.(rep),function(d) {
+# sfit = summary(lm(potato~treatment,d))
+# res1 = data.frame(sfit$coef)
+# res1$varname = rownames(sfit$coef)
+# res1$reg = 'potato_taste'
+# sfit = summary(lm(potato~treatment,d))
+# res2 = data.frame(sfit$coef)
+# res2$varname = rownames(sfit$coef)
+# res2$reg = 'buttery'
+# return(rbind(res1,res2))
+#})
 
-# let's do 1 regression per rep
-dt = ddply(french_fries,.(rep),function(d) {
- sfit = summary(lm(potato~treatment,d))
- res1 = data.frame(sfit$coef)
- res1$varname = rownames(sfit$coef)
- res1$reg = 'potato_taste'
- sfit = summary(lm(potato~treatment,d))
- res2 = data.frame(sfit$coef)
- res2$varname = rownames(sfit$coef)
- res2$reg = 'buttery'
- return(rbind(res1,res2))
-})
-
-ggt <- ggtable( varname ~ reg + rep) + 
-  ggt_cell_regression(dt)+
-  ggt_order('varname',c('treatment2','treatment1')) +
-  ggt_order('variable',c('time4')) +
-  ggt_line('reg') 
-cat(print(ggt))
+#ggt <- ggtable( varname ~ reg + rep) + 
+#  ggt_cell_regression(dt)+
+#  ggt_order('varname',c('treatment2','treatment1')) +
+#  ggt_order('variable',c('time4')) +
+#  ggt_line('reg') 
+#cat(print(ggt))

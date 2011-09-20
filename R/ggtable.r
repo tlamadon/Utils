@@ -215,8 +215,11 @@ ggtable2 <- function(data , rows, cols, file=NA,view=FALSE,resize=1,sideway=F) {
     cat(paste(HEADER_STR , TABLE_BODY_STR,TABLE_FOOTER_STR),file= paste(file,'.tex',sep=''))
     system(paste('pdflatex ', file,  '.tex' ,sep=''))
     system(paste('open ', file,  '.pdf' ,sep=''))
+  } else {
+     RES = paste(HEADER_STR , TABLE_BODY_STR,TABLE_FOOTER_STR)
+     return(RES)
   }
-  
+
   return()
 }
 
@@ -225,7 +228,7 @@ ggtable2.test <-function() {
 
   data(french_fries)
   
-  mm = ddply(french_fries,c('treatment'),function(d) {
+  mm = ddply(french_fries,c('treatment','subject'),function(d) {
     sfit = summary(lm(potato ~ time-1,d))
     r = data.frame(sfit$coef)
     r$variable = rownames(sfit$coef)
