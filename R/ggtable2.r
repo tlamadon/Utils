@@ -50,6 +50,12 @@ model2frame <-function(models) {
     # adding a BIC/AIC
     ld = rbind(ld, data.frame(variable = 'BIC', value = BIC(m),sd=NA,pval=NA ))
 
+    # try to get rsquare
+    sfit = summary(m)
+    if ( 'r.squared' %in% names(sfit)) {
+      ld = rbind(ld, data.frame(variable = 'Rsq', value = sfit$r.squared,sd=NA,pval=NA ))
+    }
+
     ld$model=i                          
     r =rbind(r,ld)
     i =i+1
@@ -67,8 +73,6 @@ taes <- function (x, y, ...)
 }
 
 ggt_labeller <- function(str,ll) {
-
-
   str = gsub('_',' ',paste(str))
   return(str)
 }
@@ -84,9 +88,11 @@ ggt_cell_plain <- function(data=NA,desc=list(value='value')) {
    # upper left quadrant of the cell tile
    return(ddply(data, ids, function(d) { 
        d2 = expand.grid(x=1:2,y=1:2,value='',hasValue=FALSE)
+       d2$spanRight   = FALSE
        d2$value       = as.character(d2$value)
-       d2$value[1]    = paste(round(d[1,desc$value],2))
+       d2$value[1]    = paste('\\multicolumn{2}{c}{',round(d[1,desc$value],2),'}',sep='')
        d2$hasValue[1] = TRUE
+       d2$spanRight   = TRUE
        return(d2)
    }))
   }
@@ -110,6 +116,7 @@ ggt_cell_regression <- function(data=NA,desc=list(value='Estimate',sd='Std..Erro
    return(ddply(data, ids, function(d) { 
        d2 = expand.grid(x=1:2,y=1:2,value='',hasValue=FALSE)
        d2$value       = as.character(d2$value)
+       d2$spanRight   = FALSE
 
        d2$value[1]    = paste(prettyNum(d[1,desc$value],digit=3))
        d2$hasValue[1] = TRUE
@@ -177,7 +184,7 @@ ggt_order <- function(varname, orderList) {
 
 # for ggtable you only give a formula
 # the data is passed to the cell
-ggtable <- function(formula,verbose=FALSE) {
+ggtable <- function(formula,data=data.frame(),verbose=FALSE) {
   
   # parsing the formula
   if (is.formula(formula)) 
@@ -190,6 +197,8 @@ ggtable <- function(formula,verbose=FALSE) {
   gg1          = list()
   gg1$orders   = list()
   gg1$lineseps = c()
+  gg1$maindata = data
+  gg1$params   = list(resize=1,sideway=FALSE)
 
   gg1$rows = v$m[[1]]
   gg1$cols = v$m[[2]]
@@ -259,7 +268,7 @@ ggt_getIDLevels <- function(cdata, vars, orders=list()) {
   # for each selector in reverse order 
   for ( v in rev(vars)) {
     od = orders[v][[1]]                                # we get the corresponding order
-    vals = union(od[[1]],setdiff(unique(dtmp[,v]),od)) # combine order with values
+    vals = union(od,setdiff(unique(dtmp[,v]),od)) # combine order with values
     
     # go through vals in reverse order and add the index value
     i = 1
@@ -316,9 +325,10 @@ ggt_computeSpan <- function(sdata,varname) {
   return(res)
 }
 
-print.ggtable <- function(ggt,file=NA,view=TRUE) {
+print.ggtable <- function(ggt,file=NA,view=TRUE,verbose=FALSE) {
   
-  cdata = ggt$cells
+  cdata  = ggt$cells
+  params = ggt$params
 
   cdata = data.table(cdata)
   key(cdata) <- c(ggt$rows,ggt$cols)
@@ -345,8 +355,8 @@ print.ggtable <- function(ggt,file=NA,view=TRUE) {
 
     # adding the line category
     if ( length(ggt$rows)>1 & ((ro==1) | 
-           any( data.table(rowframe)[ro,1:(length(ggt$rows)-1)] != 
-                data.table(rowframe)[ro-1,1:(length(ggt$rows)-1)]))) {
+           any( data.frame(rowframe)[ro,1:(length(ggt$rows)-1)] != 
+                data.frame(rowframe)[ro-1,1:(length(ggt$rows)-1)]))) {
 
       BODY_STR = paste(BODY_STR,"\\multicolumn{4}{l}{ \\bf", ggt_labeller(data.frame(rowframe)[ro,1],ggt$rename),"} \\\\ \n")
     }
@@ -367,8 +377,12 @@ print.ggtable <- function(ggt,file=NA,view=TRUE) {
       if (is.na(ld$hasValue[1])) next;
 
       # put the cell together
-      UPPER_LINE = paste(UPPER_LINE , ' & ' , ld[x==1 & y==1]$value , 
-                                      ' & ' , ld[x==1 & y==2]$value ,sep='') 
+      if (ld[x==1 & y==1]$spanRight) {
+        UPPER_LINE = paste(UPPER_LINE , ' & ' , ld[x==1 & y==1]$value , sep='') 
+      } else {
+        UPPER_LINE = paste(UPPER_LINE , ' & ' , ld[x==1 & y==1]$value , 
+                                        ' & ' , ld[x==1 & y==2]$value ,sep='') 
+      }
       LOWER_LINE = paste(LOWER_LINE , ' & ' , ld[x==2 & y==1]$value , 
                                       ' & ' , ld[x==2 & y==2]$value ,sep='') 
 
@@ -380,12 +394,14 @@ print.ggtable <- function(ggt,file=NA,view=TRUE) {
 
     # closing the lines
     if (UPPER_LINE_HAS_VALUE) {
-      BODY_STR = paste(BODY_STR, paste( data.frame(rowframe)[ro,length(ggt$rows)] ), UPPER_LINE , ' \\\\[-4pt] \n ',sep='') 
+      BODY_STR = paste(BODY_STR, '\\emph{ ' ,ggt_labeller(data.frame(rowframe)[ro,length(ggt$rows)],ggt$rename) , '}',
+                                 UPPER_LINE ,sep='') 
+      if ( LOWER_LINE_HAS_VALUE ) {
+        BODY_STR = paste(BODY_STR,  ' \\\\[-4pt] \n ' ,LOWER_LINE ,sep='') 
+      }
+      BODY_STR = paste(BODY_STR,  ' \\\\[1pt] \n ' ,sep='') 
     }
     
-    if ( LOWER_LINE_HAS_VALUE ) {
-      BODY_STR = paste(BODY_STR, LOWER_LINE , ' \\\\[1pt] \n ',sep='') 
-    }
 
     # adding line styles
     # first we need to find which idvars have changed on that row
@@ -432,6 +448,16 @@ print.ggtable <- function(ggt,file=NA,view=TRUE) {
  TABLE_FOOTER_STR = paste("\\bottomrule \n")
  TABLE_FOOTER_STR = paste(TABLE_FOOTER_STR , "\\end{tabular} \n")
 
+  if (params$resize!=1) {
+    HEADER_STR =  paste("\\scalebox{", params$resize, "}{ \r\n",HEADER_STR)
+    TABLE_FOOTER_STR =  paste(TABLE_FOOTER_STR , " \r\n } \r\n")
+  }
+
+  if (params$sideway) {
+    HEADER_STR =  paste("\\begin{landscape} \\begin{sidewaystable} \r\n",HEADER_STR)
+    TABLE_FOOTER_STR =  paste(TABLE_FOOTER_STR , " \r\n \\end{sidewaystable} \\end{landscape} \r\n")
+  }
+
   if (!is.na(file)) {
     cat(paste(HEADER_STR , BODY_STR,TABLE_FOOTER_STR),file= file)
   } else {
@@ -442,8 +468,8 @@ print.ggtable <- function(ggt,file=NA,view=TRUE) {
     HEADER_STR =  paste("\\documentclass[12pt]{article} \\usepackage{lscape} \\usepackage{rotating} \n \\usepackage{booktabs}\n \\usepackage{fullpage}  \n \\usepackage{booktabs}\n \\usepackage{graphicx} \n \\begin{document} \n",HEADER_STR)
     TABLE_FOOTER_STR =  paste(TABLE_FOOTER_STR , " \n \\thispagestyle{empty} \\end{document} \n")
     cat(paste(HEADER_STR , BODY_STR,TABLE_FOOTER_STR),file= paste(file,'.tex',sep=''))
-    system(paste('pdflatex ', file,  '.tex' ,sep=''))
-    system(paste('open ', file,  '.pdf' ,sep=''))
+    system(paste('pdflatex ', file,  '.tex' ,sep=''),ignore.stdout=!verbose)
+    system(paste('open ', file,  '.pdf' ,sep=''),ignore.stdout=!verbose)
     #system(paste('latex ' , file,  '.tex' ,sep=''))
     #system(paste('dvipng ', file,  '.dvi' ,sep=''))
     #system(paste('open '  , file,  '1.png' ,sep=''))
