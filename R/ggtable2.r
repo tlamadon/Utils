@@ -121,8 +121,9 @@ ggt_cell_regression <- function(data=NA,desc=list(value='Estimate',sd='Std..Erro
        d2$value[1]    = paste(prettyNum(d[1,desc$value],digit=3))
        d2$hasValue[1] = TRUE
 
-
-       if ( (!is.na(d[1,desc$pval]) & ( d[1,desc$pval] < 0.05))) {
+        if (desc$pval %in% names(d)) 
+           if (!is.na(d[1,desc$pval]))   
+             if ( d[1,desc$pval] < 0.05) {
          d2$value[3]    = '*'
          d2$hasValue[3] = TRUE
        }
@@ -449,24 +450,30 @@ print.ggtable <- function(ggt,file=NA,view=TRUE,verbose=FALSE) {
  TABLE_FOOTER_STR = paste(TABLE_FOOTER_STR , "\\end{tabular} \n")
 
   if (params$resize!=1) {
-    HEADER_STR =  paste("\\scalebox{", params$resize, "}{ \r\n",HEADER_STR)
-    TABLE_FOOTER_STR =  paste(TABLE_FOOTER_STR , " \r\n } \r\n")
+    HEADER_STR =  paste("\\scalebox{", params$resize, "}{ \n",HEADER_STR)
+    TABLE_FOOTER_STR =  paste(TABLE_FOOTER_STR , " \n } \n")
   }
 
   if (params$sideway) {
-    HEADER_STR =  paste("\\begin{landscape} \\begin{sidewaystable} \r\n",HEADER_STR)
-    TABLE_FOOTER_STR =  paste(TABLE_FOOTER_STR , " \r\n \\end{sidewaystable} \\end{landscape} \r\n")
+    HEADER_STR =  paste("\\begin{landscape} \\begin{sidewaystable} \n",HEADER_STR)
+    TABLE_FOOTER_STR =  paste(TABLE_FOOTER_STR , " \n \\end{sidewaystable} \\end{landscape} \n")
   }
 
+ 
+  RESP_STR = paste(HEADER_STR , BODY_STR,TABLE_FOOTER_STR)
+
   if (!is.na(file)) {
-    cat(paste(HEADER_STR , BODY_STR,TABLE_FOOTER_STR),file= file)
-  } else {
-    file = '.ggt.tmp'
+    cat(paste(RESP_STR),file= paste(file,'.tex',sep=''))
   }
 
   if (view==TRUE) {
-    HEADER_STR =  paste("\\documentclass[12pt]{article} \\usepackage{lscape} \\usepackage{rotating} \n \\usepackage{booktabs}\n \\usepackage{fullpage}  \n \\usepackage{booktabs}\n \\usepackage{graphicx} \n \\begin{document} \n",HEADER_STR)
-    TABLE_FOOTER_STR =  paste(TABLE_FOOTER_STR , " \n \\thispagestyle{empty} \\end{document} \n")
+    file = '.ggt.tmp'
+    HEADER_STR =  paste("\\documentclass[12pt]{article} \\usepackage{lscape} 
+                         \\usepackage{rotating} \n \\usepackage{booktabs}\n 
+                         \\usepackage{fullpage}  \n \\usepackage{booktabs}\n 
+                         \\usepackage{graphicx} \n \\begin{document} \n",HEADER_STR)
+    TABLE_FOOTER_STR =  paste(TABLE_FOOTER_STR , " \n \\thispagestyle{empty} 
+                              \\end{document} \n")
     cat(paste(HEADER_STR , BODY_STR,TABLE_FOOTER_STR),file= paste(file,'.tex',sep=''))
     system(paste('pdflatex ', file,  '.tex' ,sep=''),ignore.stdout=!verbose)
     system(paste('open ', file,  '.pdf' ,sep=''),ignore.stdout=!verbose)
@@ -475,7 +482,7 @@ print.ggtable <- function(ggt,file=NA,view=TRUE,verbose=FALSE) {
     #system(paste('open '  , file,  '1.png' ,sep=''))
   }
 
- return((paste(HEADER_STR , BODY_STR,TABLE_FOOTER_STR)))
+ return(RESP_STR)
 }
 
 # EXAMPLE
