@@ -100,13 +100,13 @@ mmerge <- function(data1,data2,idvar,byvar,vars) {
 # you can specify a subset of columns to look at
 # if the selector is ambiguous
 # note that you can have cicular renaming, because the data is copied first
-renameany <-function(d,rules,cols=colnames(d)) {
+renameany <-function(d,rules,cols=c()) {
+  if (length(cols)==0) {
+    cols=colnames(d)
+  }
 
   # we use the original always
   dorig = d
-
-  #1) we rename the columns
-  d = rename(dorig,rules)
 
   #2) try to rename the levels in the variadbles
   for ( n in names(rules)) {
@@ -124,6 +124,10 @@ renameany <-function(d,rules,cols=colnames(d)) {
       }
     }
   }
+
+  #1) we rename the columns
+  d = rename(dorig,rules)
+
 
   return(d)
 }
