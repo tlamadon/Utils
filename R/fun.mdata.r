@@ -96,28 +96,37 @@ mmerge <- function(data1,data2,idvar,byvar,vars) {
   return(nd)
 }
 
-# rename anything in the table (columns or cells) 
-renameany <-function(d,rules) {
+# rename anything in the table (columns or cells)
+# you can specify a subset of columns to look at
+# if the selector is ambiguous
+# note that you can have cicular renaming, because the data is copied first
+renameany <-function(d,rules,cols=colnames(d)) {
+
+  # we use the original always
+  dorig = d
 
   #1) we rename the columns
-  d = rename(d,rules)
+  d = rename(dorig,rules)
 
   #2) try to rename the levels in the variadbles
   for ( n in names(rules)) {
-    for ( c in colnames(d)) {
+    for ( c in cols) {
       
       # first check if the colum is string
-      if ( is.character(d[1,c]) ) {
+      if ( is.character(dorig[1,c]) ) {
        # try to select all rows that have value n
-       d[ d[,c] == n , c] = rules[n]
+       d[ dorig[,c] == n , c] = rules[n]
       }
 
       # for factors
-      if (is.factor(d[,c])) {
-        levels( d[,c]  )[levels(d[,c])==n] <- rules[n]
+      if (is.factor(dorig[,c])) {
+        levels( d[,c]  )[levels(dorig[,c])==n] <- rules[n]
       }
     }
   }
 
   return(d)
 }
+
+
+
