@@ -183,6 +183,16 @@ ggt_order <- function(varname, orderList) {
   return(res)
 }
 
+ggt_valsep <- function(var,val, type='line', level='2') {
+  res = list()
+  res$var   = var
+  res$val   = val
+  res$type  = type
+  res$level = level
+  class(res) <- ggt_valsep
+  return(res)
+}
+
 # for ggtable you only give a formula
 # the data is passed to the cell
 ggtable <- function(formula,data=data.frame(),verbose=FALSE) {
@@ -429,6 +439,9 @@ print.ggtable <- function(ggt,file=NA,view=TRUE,verbose=FALSE) {
   # we need to span over columns where it remains constant
   # we also need to create the string that will go in the tabular
   colframe = data.frame(colframe)
+
+  # adding colum seps -- checking each seps
+
   colframe$linesep = ''
   HEADER =''
   for (v in ggt$cols) {
@@ -471,7 +484,8 @@ print.ggtable <- function(ggt,file=NA,view=TRUE,verbose=FALSE) {
     HEADER_STR =  paste("\\documentclass[12pt]{article} \\usepackage{lscape} 
                          \\usepackage{rotating} \n \\usepackage{booktabs}\n 
                          \\usepackage{fullpage}  \n \\usepackage{booktabs}\n 
-                         \\usepackage{graphicx} \n \\begin{document} \n",HEADER_STR)
+                         \\usepackage{graphicx} \n \\usepackage{arydshln} \n
+                         \\begin{document} \n",HEADER_STR)
     TABLE_FOOTER_STR =  paste(TABLE_FOOTER_STR , " \n \\thispagestyle{empty} 
                               \\end{document} \n")
     cat(paste(HEADER_STR , BODY_STR,TABLE_FOOTER_STR),file= paste(file,'.tex',sep=''))
