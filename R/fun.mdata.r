@@ -126,7 +126,7 @@ renameany <-function(d,rules,cols=c()) {
   }
 
   #1) we rename the columns
-  d = rename(dorig,rules)
+  d = rename(d,rules)
 
 
   return(d)
