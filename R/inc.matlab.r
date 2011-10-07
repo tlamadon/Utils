@@ -7,6 +7,15 @@ repmat <- function(A,n,m) {
 }
 
 
+shift <- function(v) {
+
+  if (is.data.frame(v)) {
+
+  } else {
+    return( c( v[2:length(v)],v[1]))
+  }
+}
+
 # spread the array A[1,2,3] to 
 # what dim specifies in the order given
 # spread(A , c(2) , 10) will insert a dimension
