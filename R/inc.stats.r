@@ -26,3 +26,30 @@ wt.cor <- function(x,y,w) {
  return(r$cor[2,1])
 }
 
+
+
+getNormCop <- function(rho,n,Qn= seq(1/n,1-1/n,l=n),cond=FALSE) {
+
+  require(copula)
+  cop = normalCopula(rho) 
+
+  #create the grid
+  vals = expand.grid(p=Qn,p2=Qn)
+  
+  # apply the copula
+  vals$v = dcopula(cop,as.matrix(vals))
+  G = array(vals$v,dim=c(n,n)) 
+
+  # making it conditional
+  if (cond) {
+    G = t(apply(G,1,function(v) { return(v/sum(v)) }))
+  }
+
+  return(G)
+}
+
+getNormPdf <- function(sigma, n) {
+  Z  = as.array(qnorm(seq(1/n , 1-1/n,l=n),sd=sigma))
+  G  = as.array(dnorm(Z),sd=sigma); G=G/sum(G)
+  return(list(vals=Z,mass=G))
+}

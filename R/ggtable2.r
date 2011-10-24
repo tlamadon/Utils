@@ -25,7 +25,9 @@ require(gdata)
 
 model2frame <-function(models) {
 
-  models = c(models)
+  if (class(models)!='list') {
+    models = list(models)
+  }
 
   r=data.frame()
   i=0
@@ -494,9 +496,9 @@ print.ggtable <- function(ggt,file=NA,view=TRUE,verbose=FALSE) {
     #system(paste('latex ' , file,  '.tex' ,sep=''))
     #system(paste('dvipng ', file,  '.dvi' ,sep=''))
     #system(paste('open '  , file,  '1.png' ,sep=''))
+  } else {
+    return(RESP_STR)
   }
-
- return(RESP_STR)
 }
 
 # EXAMPLE
