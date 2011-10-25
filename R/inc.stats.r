@@ -53,3 +53,21 @@ getNormPdf <- function(sigma, n) {
   G  = as.array(dnorm(Z),sd=sigma); G=G/sum(G)
   return(list(vals=Z,mass=G))
 }
+
+
+# copied from MSBVAR
+rmultnorm <- function (n, mu, vmat, tol = 1e-10) 
+{
+    p <- ncol(vmat)
+    if (mu==0) mu = rep(0,p);
+
+    if (length(mu) != p) 
+        stop(paste("mu vector is the wrong length:", length(mu)))
+    vs <- La.svd(vmat)
+    vsqrt <- t(t(vs$vt) %*% (t(vs$u) * sqrt(vs$d)))
+    ans <- matrix(rnorm(n * p), nrow = n) %*% vsqrt
+    ans <- sweep(ans, 2, mu, "+")
+    dimnames(ans) <- list(NULL, dimnames(vmat)[[2]])
+    ans
+}
+
