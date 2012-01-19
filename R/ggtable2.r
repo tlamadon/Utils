@@ -123,7 +123,7 @@ ggt_cell_regression <- function(data=NA,desc=list(value='Estimate',sd='Std..Erro
        d2$value[1]    = paste(prettyNum(d[1,desc$value],digit=3))
        d2$hasValue[1] = TRUE
 
-        if (desc$pval %in% names(d)) 
+        if ((length(desc$pval)>0) & (desc$pval %in% names(d)))
            if (!is.na(d[1,desc$pval]))   
              if ( d[1,desc$pval] < 0.05) {
          d2$value[3]    = '*'
@@ -382,8 +382,8 @@ print.ggtable <- function(ggt,file=NA,view=TRUE,verbose=FALSE) {
     for (co in 1:nrow(colframe)) {
       
       # get the line in cdata  that corresponds to the value
-      T = data.table(c(rowframe[ro,],colframe[co,])) 
-      T$hasValue <- NULL # removing the hasValue        
+      T = data.table(data.frame(c(rowframe[ro,],colframe[co,])))
+      T$hasValue <- NULL; # removing the hasValue        
 
       # get the cell content
       ld = cdata[T,]
@@ -491,7 +491,7 @@ print.ggtable <- function(ggt,file=NA,view=TRUE,verbose=FALSE) {
     TABLE_FOOTER_STR =  paste(TABLE_FOOTER_STR , " \n \\thispagestyle{empty} 
                               \\end{document} \n")
     cat(paste(HEADER_STR , BODY_STR,TABLE_FOOTER_STR),file= paste(file,'.tex',sep=''))
-    system(paste('pdflatex ', file,  '.tex' ,sep=''),ignore.stdout=!verbose)
+    system(paste('/usr/texbin/pdflatex ', file,  '.tex' ,sep=''),ignore.stdout=!verbose)
     system(paste('open ', file,  '.pdf' ,sep=''),ignore.stdout=!verbose)
     #system(paste('latex ' , file,  '.tex' ,sep=''))
     #system(paste('dvipng ', file,  '.dvi' ,sep=''))
