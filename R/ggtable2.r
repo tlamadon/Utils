@@ -197,15 +197,15 @@ ggt_valsep <- function(var,val, type='line', level='2') {
 
 # for ggtable you only give a formula
 # the data is passed to the cell
-ggtable <- function(formula,data=data.frame(),verbose=FALSE) {
+ggtable <- function(form,data=data.frame(),verbose=FALSE) {
   
   # parsing the formula
-  if (is.formula(formula)) 
-        formula <- deparse(formula)
-  if (!is.character(formula)) 
-        formula <- as.character(formula)
+  #if (is.formula(formula)) 
+  #      formula <- deparse(formula)
+  #if (!is.character(formula)) 
+  #      formula <- as.character(formula)
 
-  v = all.vars.character(formula)
+  #v = all.vars.character(formula)
 
   gg1          = list()
   gg1$orders   = list()
@@ -213,8 +213,8 @@ ggtable <- function(formula,data=data.frame(),verbose=FALSE) {
   gg1$maindata = data
   gg1$params   = list(resize=1,sideway=FALSE)
 
-  gg1$rows = v$m[[1]]
-  gg1$cols = v$m[[2]]
+  gg1$rows = all.vars(form[[2]])
+  gg1$cols = all.vars(form[[3]])
 
   gg1$cells = data.frame()
   gg1$rename = list()
@@ -387,7 +387,10 @@ print.ggtable <- function(ggt,file=NA,view=TRUE,verbose=FALSE) {
 
       # get the cell content
       ld = cdata[T,]
-      if (is.na(ld$hasValue[1])) next;
+      if (is.na(ld$hasValue[1])) {
+        ld = data.table(expand.grid(x=1:2,y=1:2,value='',spanRight=FALSE,hasValue=TRUE))
+        ld$value = as.character(ld$value)
+      }
 
       # put the cell together
       if (ld[x==1 & y==1]$spanRight) {
