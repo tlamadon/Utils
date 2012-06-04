@@ -53,6 +53,11 @@ multiplot <- function(..., plotlist=NULL, cols) {
 
 }
 
+# ideally you would say that 
+# you want to lag variable Y with respect to time
+# per groups, and being constant over some voer variable
+#varlags <- function(dd,) {
+#}
 
 # function that compiles and links
 # a Rcpp module
@@ -62,4 +67,5 @@ ModuleFromFile <- function(name) {
   foo <- Module(name, getDynLib(fx) )
   return(foo)
 }
+
 

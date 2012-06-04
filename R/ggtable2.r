@@ -25,7 +25,7 @@ require(gdata)
 
 model2frame <-function(models) {
 
-  if (class(models)!='list') {
+  if (!('list' %in% class(models))) {
     models = list(models)
   }
 
@@ -34,7 +34,7 @@ model2frame <-function(models) {
 
   for (m in models) {
     # adding the coeffs
-    if (class(m)=='mer') {
+    if ( 'mer' %in% class(m)) {
       coefs = summary(m)@coefs
     } else {
       coefs = summary(m)$coef
