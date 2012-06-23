@@ -1,5 +1,14 @@
 # utility function for melted data
 
+# I guess in general it's about data processing. Most command can be done
+# with data.table which quite fast and actually has the right syntax I think
+
+# most common annoying task:
+# - renaming things ( I should try to write a better renaming that uses patterns)
+# - computation of aggregates / time dependent by group. I guess you would want something with the ability to use .I - 1
+# - reshaping / appending particularly when the data is melted.
+
+
 # things that tend to be painfull to do
 
 # 1) you want to merge a data in long format based
