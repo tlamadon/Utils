@@ -26,7 +26,18 @@ wt.cor <- function(x,y,w) {
  return(r$cor[2,1])
 }
 
+wt.hist <- function(x,w,b) {
+  # compute the ECDF
+  I = order(x)
+  F = cumsum(w[I])
 
+  # find the bins
+  bs = seq(min(x),max(x),l=b)
+  i=1
+  
+
+
+}
 
 getNormCop <- function(rho,n,Qn= seq(1/n,1-1/n,l=n),cond=FALSE) {
 

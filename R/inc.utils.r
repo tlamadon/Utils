@@ -68,4 +68,26 @@ ModuleFromFile <- function(name) {
   return(foo)
 }
 
+compileCppFunction <- function(name,verbose=TRUE) {
+  # get the source of the file
+  ll <- readLines(name)
+  n = length(ll)
 
+  # get separatet the include from the function
+  I <- which(str_detect(ll,'////FUNC'))
+  if (length(I)==0) {
+    src = paste(ll,collapse='\n')
+    inc = ''
+  } else {
+    src = paste(ll[I:n],collapse='\n')
+    inc = paste(ll[1:(I-1)],collapse='\n')
+  }
+  
+  cpp_func <- cxxfunction(
+     signature(R_args='SEXP'),
+     src,plugin='RcppGSL',
+     verbose=verbose,
+     includes=inc)
+
+  return(cpp_func)
+}
