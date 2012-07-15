@@ -91,3 +91,18 @@ compileCppFunction <- function(name,verbose=TRUE) {
 
   return(cpp_func)
 }
+
+fdGrad <- function(pars,fun, ... , .relStep = (.Machine$double.eps)^(1/3)) {
+  
+  # for each of the pars, we compute a small deviation
+  mean <- fun(pars,...)
+  gradient = pars*0
+  for (i in 1:length(pars)) {
+    dx = pars
+    dx[i] <- dx[i] + .relStep
+    gradient[i] = (fun(dx,...) -mean)/.relStep
+  }
+  
+  return(list(mean=mean, gradient = gradient))
+}
+
