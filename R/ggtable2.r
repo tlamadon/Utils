@@ -30,7 +30,7 @@ model2frame <-function(models) {
   }
 
   r=data.frame()
-  i=0
+  i=1
 
   for (m in models) {
     # adding the coeffs
