@@ -58,7 +58,11 @@ model2frame <-function(models) {
       ld = rbind(ld, data.frame(variable = 'Rsq', value = sfit$r.squared,sd=NA,pval=NA ))
     }
 
-    ld$model=i                          
+    if (str_length(names(models)[i])>0) {
+      ld$model = names(models)[i] 
+    } else {
+      ld$model=paste('model',i)
+    }
     r =rbind(r,ld)
     i =i+1
   }
