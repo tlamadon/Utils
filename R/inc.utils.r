@@ -106,3 +106,102 @@ fdGrad <- function(pars,fun, ... , .relStep = (.Machine$double.eps)^(1/3)) {
   return(list(mean=mean, gradient = gradient))
 }
 
+
+
+# function that parsed a1:a2 + b1 + c1:c2
+# and returns a1,b1,b1 and a2,b1,c2
+parseSumDivide <- function(e) {
+
+  # if we have a symbole we attach it to both lists
+  if (is.symbol(e)) {
+    return( list(a=c(paste(e)),b=paste(e)))
+  }
+
+  # if we have a divide, we split it
+  if (e[[1]]==':') {
+    return( list(a=c(paste(e[[2]])),b=paste(e[[3]])))
+  }
+
+  # if we have a plus, we parse it, and append a and b
+  if (e[[1]]=='+') {
+    r1 = parseSumDivide(e[[2]])
+    r2 = parseSumDivide(e[[3]])
+    return(list(a = c(r1$a,r2$a) , b = c(r1$b,r2$b)))
+  }
+}
+
+ddmerge <- function(form) {
+	
+	expr = substitute(form)	
+	
+	if (expr[[1]]!='~' || expr[[2]][[1]]!='/' || expr[[3]][[1]] != '|') {
+		cat('formula should be: data1 < data2 ~ optu:=roptu | blockName + subject:sID ')
+    return()
+	}
+	
+	data1 = data.frame(eval(expr[[2]][[2]],parent.env(environment())))
+	data2 = data.frame(eval(expr[[2]][[3]],parent.env(environment())))
+
+	# constructing list of variables
+	LHS = expr[[3]][[2]]
+	RHS = expr[[3]][[3]]
+  select_rule = parseSumDivide(RHS)
+
+	# renaming data2
+  # --------------
+  rename_rule = parseSumDivide(LHS)
+  nn = names(data2)
+  for (i in length(rename_rule$a)) {
+    I <- which(nn==rename_rule$b[[i]])
+    if (length(I)>0) nn[I] <- rename_rule$a[[i]]
+  }
+  names(data2) <- nn
+
+  # dropping other variables
+  # ------------------------
+  # checking that the vars are in the data.frame
+  missing_cols = setdiff(c(select_rule$b,rename_rule$a) , names(data2)) 
+  if (length(missing_cols)>0) stop(paste('data2 does not have columns: ' ,missing_cols,collapse=',') );
+  data2 = data2[,c(select_rule$b,rename_rule$a)]
+
+  # merging 
+  # ------------------------
+  r = merge(data1,data2,by.x=select_rule$a, by.y = select_rule$b) 
+
+  return(r)
+}
+
+ddmergev <- function(data1,data2,form) {
+	
+	expr = substitute(form)	
+	
+	# constructing list of variables
+	LHS = expr[[2]]
+	RHS = expr[[3]]
+  select_rule = parseSumDivide(RHS)
+
+	# renaming data2
+  # --------------
+  rename_rule = parseSumDivide(LHS)
+  nn = names(data2)
+  for (i in length(rename_rule$a)) {
+    I <- which(nn==rename_rule$b[[i]])
+    if (length(I)>0) nn[I] <- rename_rule$a[[i]]
+  }
+  names(data2) <- nn
+
+  # dropping other variables
+  # ------------------------
+  # checking that the vars are in the data.frame
+  missing_cols = setdiff(c(select_rule$b,rename_rule$a) , names(data2)) 
+  if (length(missing_cols)>0) stop(paste('data2 does not have columns: ' ,missing_cols,collapse=',') );
+  data2 = data2[,c(select_rule$b,rename_rule$a)]
+
+  # merging 
+  # ------------------------
+  r = merge(data1,data2,by.x=select_rule$a, by.y = select_rule$b) 
+
+  return(r)
+}
+
+

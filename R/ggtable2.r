@@ -50,7 +50,8 @@ model2frame <-function(models) {
     rownames(ld) <- NULL
 
     # adding a BIC/AIC
-    ld = rbind(ld, data.frame(variable = 'BIC', value = BIC(m),sd=NA,pval=NA ))
+    bic = BIC(m)
+    if (length(bic)>0) ld = rbind(ld, data.frame(variable = 'BIC', value = BIC(m),sd=NA,pval=NA ));
 
     # try to get rsquare
     sfit = summary(m)
@@ -348,7 +349,7 @@ print.ggtable <- function(ggt,file=NA,view=TRUE,verbose=FALSE) {
   params = ggt$params
 
   cdata = data.table(cdata)
-  key(cdata) <- c(ggt$rows,ggt$cols)
+  setkeyv(cdata,c(ggt$rows,ggt$cols))
   # we need to find the list of column and row values
   # they are the interactions between the values
   # of the variavle given in ids
