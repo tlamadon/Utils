@@ -151,7 +151,7 @@ ddmerge <- function(form) {
   # --------------
   rename_rule = parseSumDivide(LHS)
   nn = names(data2)
-  for (i in length(rename_rule$a)) {
+  for (i in 1:length(rename_rule$a)) {
     I <- which(nn==rename_rule$b[[i]])
     if (length(I)>0) nn[I] <- rename_rule$a[[i]]
   }
@@ -174,17 +174,19 @@ ddmerge <- function(form) {
 ddmergev <- function(data1,data2,form) {
 	
 	expr = substitute(form)	
+
+  # make sure we are using data.frame, data.table creates problems
 	
 	# constructing list of variables
 	LHS = expr[[2]]
 	RHS = expr[[3]]
   select_rule = parseSumDivide(RHS)
+  rename_rule = parseSumDivide(LHS)
 
 	# renaming data2
   # --------------
-  rename_rule = parseSumDivide(LHS)
   nn = names(data2)
-  for (i in length(rename_rule$a)) {
+  for (i in 1:length(rename_rule$a)) {
     I <- which(nn==rename_rule$b[[i]])
     if (length(I)>0) nn[I] <- rename_rule$a[[i]]
   }
