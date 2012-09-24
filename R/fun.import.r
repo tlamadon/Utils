@@ -123,7 +123,7 @@ import.ls <- function(env =parent.frame() ) {
   tt = objects(envir = env)
   for (oon in tt) {
       oo <- get(oon, envir = env)
-      if (class(oo)[[1]]=='importenv') {  ll = c(ll,obj); lln = c(lln,oon) }
+      if (class(oo)[[1]]=='importenv') {  ll = c(ll,oo); lln = c(lln,oon) }
   }
   return(ll)
 }
